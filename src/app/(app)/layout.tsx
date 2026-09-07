@@ -7,19 +7,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex flex-1 flex-col">
-      <header className="flex items-center justify-between border-b border-neutral-200 px-6 py-3">
+      <header className="flex items-center justify-between border-b border-surface-border bg-white px-6 py-3">
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="font-semibold">
-            DocApprove
+          <Link href="/dashboard" className="font-semibold text-foreground">
+            Doc<span className="text-brand">Approve</span>
           </Link>
           <nav className="flex gap-4 text-sm text-neutral-600">
-            <Link href="/dashboard" className="hover:text-neutral-900">
+            <Link href="/dashboard" className="hover:text-brand">
               Dashboard
             </Link>
-            <Link href="/documents/new" className="hover:text-neutral-900">
+            <Link href="/documents/new" className="hover:text-brand">
               Upload
             </Link>
-            <Link href="/org/settings" className="hover:text-neutral-900">
+            <Link href="/org/settings" className="hover:text-brand">
               Org settings
             </Link>
           </nav>
@@ -27,7 +27,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="flex items-center gap-3 text-sm text-neutral-600">
           <span>{org.name}</span>
           <form action={signOut}>
-            <button type="submit" className="hover:text-neutral-900">
+            <button type="submit" className="hover:text-brand">
               Sign out
             </button>
           </form>

@@ -97,7 +97,7 @@ export default async function DocumentDetailPage({
       </div>
 
       {myPendingRequest && (
-        <section className="rounded-md border border-amber-200 bg-amber-50 p-4">
+        <section className="rounded-lg border border-amber-200 bg-amber-50 p-4">
           <h2 className="mb-2 font-semibold">Your decision is needed</h2>
           <DecisionForm
             approveAction={decideApproval.bind(null, myPendingRequest.id, id, "approved")}
@@ -108,14 +108,14 @@ export default async function DocumentDetailPage({
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">Versions</h2>
-        <ul className="divide-y divide-neutral-200 rounded-md border border-neutral-200">
+        <ul className="divide-y divide-surface-border rounded-lg border border-surface-border">
           {versionsWithUrls.map((v) => (
             <li key={v.id} className="flex items-center justify-between px-4 py-3 text-sm">
               <span>
                 v{v.version_number} — {v.file_name}
               </span>
               {v.url ? (
-                <a href={v.url} className="text-blue-600 hover:underline">
+                <a href={v.url} className="text-brand hover:underline">
                   Download
                 </a>
               ) : (

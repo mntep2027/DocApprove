@@ -29,7 +29,7 @@ export default async function OrgSettingsPage() {
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">Members</h2>
-        <ul className="divide-y divide-neutral-200 rounded-md border border-neutral-200">
+        <ul className="divide-y divide-surface-border rounded-lg border border-surface-border">
           {(memberRows ?? []).map((m) => {
             const profile = profiles?.find((p) => p.id === m.user_id);
             return (
