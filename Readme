@@ -1,7 +1,0 @@
-echo "# DocApprove" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git branch -M main
-git remote add origin https://github.com/mntep2027/DocApprove.git
-git push -u origin main
