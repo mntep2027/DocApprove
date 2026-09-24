@@ -2,9 +2,11 @@ import { notFound } from "next/navigation";
 import { requireOrg } from "@/lib/session";
 import { getDownloadUrl } from "@/lib/actions/documents";
 import { shareDocument, decideApproval } from "@/lib/actions/approvals";
+import { postMessage } from "@/lib/actions/messages";
 import { StatusBadge } from "@/components/status-badge";
 import ShareForm from "./share-form";
 import DecisionForm from "./decision-form";
+import DiscussionThread from "./discussion-thread";
 
 export default async function DocumentDetailPage({
   params,
@@ -12,7 +14,7 @@ export default async function DocumentDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { supabase, org } = await requireOrg();
+  const { supabase, user, org } = await requireOrg();
 
   const { data: doc } = await supabase
     .from("documents")
@@ -47,12 +49,13 @@ export default async function DocumentDetailPage({
 
   const sharedOrgIds = (shares ?? []).map((s) => s.shared_with_org_id);
   const requestOrgIds = (requests ?? []).map((r) => r.target_org_id);
-  const relatedOrgIds = [...new Set([...sharedOrgIds, ...requestOrgIds])];
+  const relatedOrgIds = [...new Set([doc.org_id, ...sharedOrgIds, ...requestOrgIds])];
   const { data: relatedOrgs } =
     relatedOrgIds.length > 0
       ? await supabase.from("organizations").select("id, name, slug").in("id", relatedOrgIds)
       : { data: [] };
   const orgName = (orgId: string) => relatedOrgs?.find((o) => o.id === orgId)?.name ?? orgId;
+  const orgNames = Object.fromEntries((relatedOrgs ?? []).map((o) => [o.id, o.name]));
 
   const { data: auditLog } = await supabase
     .from("audit_log")
@@ -81,7 +84,23 @@ export default async function DocumentDetailPage({
     })
   );
 
+  const { data: messages } = await supabase
+    .from("document_messages")
+    .select("id, author_id, org_id, body, reply_to_id, created_at")
+    .eq("document_id", id)
+    .order("created_at", { ascending: true });
+
+  const messageAuthorIds = [...new Set([...(messages ?? []).map((m) => m.author_id), user.id])];
+  const { data: messageProfiles } = await supabase
+    .from("profiles")
+    .select("id, email, full_name")
+    .in("id", messageAuthorIds);
+  const initialProfiles = Object.fromEntries(
+    (messageProfiles ?? []).map((p) => [p.id, { full_name: p.full_name, email: p.email }])
+  );
+
   const shareAction = shareDocument.bind(null, id);
+  const postMessageAction = postMessage.bind(null, id, org.id);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8">
@@ -141,6 +160,19 @@ export default async function DocumentDetailPage({
           )}
         </section>
       )}
+
+      <section>
+        <h2 className="mb-3 text-lg font-semibold">Discussion</h2>
+        <DiscussionThread
+          documentId={id}
+          orgId={org.id}
+          currentUserId={user.id}
+          initialMessages={messages ?? []}
+          initialProfiles={initialProfiles}
+          orgNames={orgNames}
+          postMessageAction={postMessageAction}
+        />
+      </section>
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">Audit trail</h2>

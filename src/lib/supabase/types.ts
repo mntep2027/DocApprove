@@ -176,6 +176,27 @@ export interface Database {
         Update: Record<string, never>;
         Relationships: [];
       };
+      document_messages: {
+        Row: {
+          id: string;
+          document_id: string;
+          org_id: string;
+          author_id: string;
+          body: string;
+          reply_to_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          document_id: string;
+          org_id: string;
+          author_id: string;
+          body: string;
+          reply_to_id?: string | null;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
