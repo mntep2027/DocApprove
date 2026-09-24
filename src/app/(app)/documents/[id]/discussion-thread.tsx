@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Message = {
@@ -14,10 +14,28 @@ type Message = {
 };
 
 type Profile = { full_name: string | null; email: string };
+type Participant = { id: string; full_name: string | null; email: string; org_id: string };
 
 function displayName(profile: Profile | undefined, fallbackId: string) {
   if (!profile) return `User ${fallbackId.slice(0, 8)}`;
   return profile.full_name || profile.email;
+}
+
+function handleFor(p: { full_name: string | null; email: string }) {
+  const base = p.full_name?.trim() || p.email.split("@")[0];
+  return base.replace(/\s+/g, "");
+}
+
+function escapeRegExp(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Detects an in-progress "@partial" token right before the cursor.
+function findMentionTrigger(text: string, cursor: number) {
+  const uptoCursor = text.slice(0, cursor);
+  const match = uptoCursor.match(/(?:^|\s)@(\w*)$/);
+  if (!match) return null;
+  return { start: cursor - match[1].length - 1, query: match[1] };
 }
 
 export default function DiscussionThread({
@@ -27,6 +45,7 @@ export default function DiscussionThread({
   initialMessages,
   initialProfiles,
   orgNames,
+  participants,
   postMessageAction,
 }: {
   documentId: string;
@@ -35,6 +54,7 @@ export default function DiscussionThread({
   initialMessages: Message[];
   initialProfiles: Record<string, Profile>;
   orgNames: Record<string, string>;
+  participants: Participant[];
   postMessageAction: (formData: FormData) => Promise<{ error?: string } | void>;
 }) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -43,8 +63,33 @@ export default function DiscussionThread({
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [error, setError] = useState<string | undefined>();
   const [sending, setSending] = useState(false);
+  const [mention, setMention] = useState<{ start: number; query: string; index: number } | null>(
+    null
+  );
   const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const knownProfileIds = useRef(new Set(Object.keys(initialProfiles)));
+
+  const taggable = useMemo(
+    () => participants.filter((p) => p.id !== currentUserId),
+    [participants, currentUserId]
+  );
+
+  const mentionMatches = useMemo(() => {
+    if (!mention) return [];
+    const q = mention.query.toLowerCase();
+    return taggable
+      .filter((p) => handleFor(p).toLowerCase().startsWith(q) || (p.full_name ?? "").toLowerCase().startsWith(q))
+      .slice(0, 6);
+  }, [mention, taggable]);
+
+  const handleToLabel = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of [...participants, ...Object.values(profiles)]) {
+      map.set(handleFor(p), p.full_name || p.email);
+    }
+    return map;
+  }, [participants, profiles]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -104,6 +149,49 @@ export default function DiscussionThread({
     bottomRef.current?.scrollIntoView({ block: "nearest" });
   }, [messages.length]);
 
+  function updateDraft(value: string, cursor: number) {
+    setDraft(value);
+    const trigger = findMentionTrigger(value, cursor);
+    setMention(trigger ? { ...trigger, index: 0 } : null);
+  }
+
+  function selectMention(p: Participant) {
+    if (!mention || !textareaRef.current) return;
+    const handle = handleFor(p);
+    const before = draft.slice(0, mention.start);
+    const after = draft.slice(mention.start + 1 + mention.query.length);
+    const next = `${before}@${handle} ${after}`;
+    setDraft(next);
+    setMention(null);
+    requestAnimationFrame(() => {
+      const pos = before.length + handle.length + 2;
+      textareaRef.current?.focus();
+      textareaRef.current?.setSelectionRange(pos, pos);
+    });
+  }
+
+  function renderBody(body: string) {
+    if (handleToLabel.size === 0) return body;
+    const pattern = new RegExp(
+      `@(${[...handleToLabel.keys()].filter(Boolean).map(escapeRegExp).join("|")})\\b`,
+      "g"
+    );
+    const parts: ReactNode[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(body))) {
+      if (match.index > lastIndex) parts.push(body.slice(lastIndex, match.index));
+      parts.push(
+        <span key={match.index} className="font-medium text-brand">
+          @{match[1]}
+        </span>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < body.length) parts.push(body.slice(lastIndex));
+    return parts;
+  }
+
   async function handleSend() {
     const body = draft.trim();
     if (!body || sending) return;
@@ -122,6 +210,7 @@ export default function DiscussionThread({
     setMessages((prev) => [...prev, optimistic]);
     setDraft("");
     setReplyingTo(null);
+    setMention(null);
     setError(undefined);
     setSending(true);
 
@@ -140,7 +229,7 @@ export default function DiscussionThread({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex max-h-96 flex-col gap-3 overflow-y-auto rounded-lg border border-surface-border p-4">
+      <div className="flex h-[60vh] flex-col gap-3 overflow-y-auto rounded-lg border border-surface-border p-4 lg:h-[calc(100vh-12rem)]">
         {messages.length === 0 && (
           <p className="text-sm text-neutral-500">No messages yet. Start the discussion.</p>
         )}
@@ -153,7 +242,7 @@ export default function DiscussionThread({
                   {displayName(profiles[parent.author_id], parent.author_id)}: {parent.body}
                 </div>
               )}
-              <div className="flex items-baseline gap-2">
+              <div className="flex flex-wrap items-baseline gap-2">
                 <span className="text-sm font-medium text-foreground">
                   {displayName(profiles[m.author_id], m.author_id)}
                 </span>
@@ -164,7 +253,7 @@ export default function DiscussionThread({
                   {new Date(m.created_at).toLocaleString()}
                 </span>
               </div>
-              <p className="text-sm text-neutral-800">{m.body}</p>
+              <p className="text-sm text-neutral-800">{renderBody(m.body)}</p>
               <button
                 type="button"
                 onClick={() => setReplyingTo(m)}
@@ -194,18 +283,62 @@ export default function DiscussionThread({
         </div>
       )}
 
-      <div className="flex gap-2">
+      <div className="relative flex gap-2">
+        {mention && mentionMatches.length > 0 && (
+          <ul className="absolute bottom-full mb-1 w-64 overflow-hidden rounded-lg border border-surface-border bg-white shadow-lg">
+            {mentionMatches.map((p, i) => (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  onClick={() => selectMention(p)}
+                  className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-surface ${
+                    i === mention.index ? "bg-surface" : ""
+                  }`}
+                >
+                  <span>{p.full_name || p.email}</span>
+                  <span className="text-xs text-neutral-500">{orgNames[p.org_id]}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         <textarea
+          ref={textareaRef}
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => updateDraft(e.target.value, e.target.selectionStart)}
           onKeyDown={(e) => {
+            if (mention && mentionMatches.length > 0) {
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setMention({ ...mention, index: (mention.index + 1) % mentionMatches.length });
+                return;
+              }
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setMention({
+                  ...mention,
+                  index: (mention.index - 1 + mentionMatches.length) % mentionMatches.length,
+                });
+                return;
+              }
+              if (e.key === "Enter" || e.key === "Tab") {
+                e.preventDefault();
+                selectMention(mentionMatches[mention.index]);
+                return;
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setMention(null);
+                return;
+              }
+            }
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               handleSend();
             }
           }}
           rows={2}
-          placeholder="Write a message..."
+          placeholder="Write a message... use @ to mention someone"
           className="flex-1 rounded-lg border border-surface-border px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
         />
         <button

@@ -204,6 +204,10 @@ export interface Database {
         Args: { org_name: string; org_slug: string };
         Returns: Database["public"]["Tables"]["organizations"]["Row"];
       };
+      document_participants: {
+        Args: { p_document_id: string };
+        Returns: { id: string; full_name: string | null; email: string; org_id: string }[];
+      };
       add_org_member: {
         Args: { p_org_id: string; p_email: string; p_role: string };
         Returns: undefined;

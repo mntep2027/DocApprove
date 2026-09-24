@@ -99,11 +99,16 @@ export default async function DocumentDetailPage({
     (messageProfiles ?? []).map((p) => [p.id, { full_name: p.full_name, email: p.email }])
   );
 
+  const { data: participants } = await supabase.rpc("document_participants", {
+    p_document_id: id,
+  });
+
   const shareAction = shareDocument.bind(null, id);
   const postMessageAction = postMessage.bind(null, id, org.id);
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-8">
+    <div className="mx-auto flex max-w-6xl flex-col gap-8 lg:flex-row lg:items-start">
+    <div className="flex flex-1 flex-col gap-8">
       <div>
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold">{doc.title}</h1>
@@ -162,19 +167,6 @@ export default async function DocumentDetailPage({
       )}
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold">Discussion</h2>
-        <DiscussionThread
-          documentId={id}
-          orgId={org.id}
-          currentUserId={user.id}
-          initialMessages={messages ?? []}
-          initialProfiles={initialProfiles}
-          orgNames={orgNames}
-          postMessageAction={postMessageAction}
-        />
-      </section>
-
-      <section>
         <h2 className="mb-3 text-lg font-semibold">Audit trail</h2>
         {auditLog && auditLog.length > 0 ? (
           <ul className="flex flex-col gap-2 text-sm text-neutral-600">
@@ -189,6 +181,21 @@ export default async function DocumentDetailPage({
           <p className="text-sm text-neutral-500">No activity yet.</p>
         )}
       </section>
+    </div>
+
+    <aside className="w-full shrink-0 lg:sticky lg:top-8 lg:w-96">
+      <h2 className="mb-3 text-lg font-semibold">Discussion</h2>
+      <DiscussionThread
+        documentId={id}
+        orgId={org.id}
+        currentUserId={user.id}
+        initialMessages={messages ?? []}
+        initialProfiles={initialProfiles}
+        orgNames={orgNames}
+        participants={participants ?? []}
+        postMessageAction={postMessageAction}
+      />
+    </aside>
     </div>
   );
 }
