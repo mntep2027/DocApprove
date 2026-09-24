@@ -87,9 +87,13 @@ export default async function DocumentDetailPage({
 
   const { data: messages } = await supabase
     .from("document_messages")
-    .select("id, author_id, org_id, body, reply_to_id, created_at")
+    .select("id, author_id, org_id, body, reply_to_id, version_id, created_at")
     .eq("document_id", id)
     .order("created_at", { ascending: true });
+
+  const versionNumbers = Object.fromEntries(
+    versionsWithUrls.map((v) => [v.id, v.version_number])
+  );
 
   const messageAuthorIds = [...new Set([...(messages ?? []).map((m) => m.author_id), user.id])];
   const { data: messageProfiles } = await supabase
@@ -208,6 +212,8 @@ export default async function DocumentDetailPage({
         initialMessages={messages ?? []}
         initialProfiles={initialProfiles}
         orgNames={orgNames}
+        versionNumbers={versionNumbers}
+        currentVersionId={versionsWithUrls[0]?.id ?? ""}
         participants={participants ?? []}
         postMessageAction={postMessageAction}
       />

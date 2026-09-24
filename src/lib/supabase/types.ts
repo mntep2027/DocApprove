@@ -184,6 +184,7 @@ export interface Database {
           author_id: string;
           body: string;
           reply_to_id: string | null;
+          version_id: string;
           created_at: string;
         };
         Insert: {
@@ -193,6 +194,7 @@ export interface Database {
           author_id: string;
           body: string;
           reply_to_id?: string | null;
+          version_id: string;
         };
         Update: Record<string, never>;
         Relationships: [];

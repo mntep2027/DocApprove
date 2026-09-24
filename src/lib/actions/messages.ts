@@ -23,6 +23,17 @@ export async function postMessage(documentId: string, orgId: string, formData: F
     return { error: "Missing message id." };
   }
 
+  const { data: latestVersion, error: versionError } = await supabase
+    .from("document_versions")
+    .select("id")
+    .eq("document_id", documentId)
+    .order("version_number", { ascending: false })
+    .limit(1)
+    .single();
+  if (versionError || !latestVersion) {
+    return { error: "Document has no uploaded version yet." };
+  }
+
   const { error } = await supabase.from("document_messages").insert({
     id: clientId,
     document_id: documentId,
@@ -30,6 +41,7 @@ export async function postMessage(documentId: string, orgId: string, formData: F
     author_id: user.id,
     body,
     reply_to_id: replyToId || null,
+    version_id: latestVersion.id,
   });
 
   if (error) {

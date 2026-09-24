@@ -9,6 +9,7 @@ type Message = {
   org_id: string;
   body: string;
   reply_to_id: string | null;
+  version_id: string;
   created_at: string;
   sending?: boolean;
 };
@@ -46,6 +47,8 @@ export default function DiscussionThread({
   initialProfiles,
   orgNames,
   participants,
+  versionNumbers,
+  currentVersionId,
   postMessageAction,
 }: {
   documentId: string;
@@ -55,6 +58,8 @@ export default function DiscussionThread({
   initialProfiles: Record<string, Profile>;
   orgNames: Record<string, string>;
   participants: Participant[];
+  versionNumbers: Record<string, number>;
+  currentVersionId: string;
   postMessageAction: (formData: FormData) => Promise<{ error?: string } | void>;
 }) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -82,6 +87,21 @@ export default function DiscussionThread({
       .filter((p) => handleFor(p).toLowerCase().startsWith(q) || (p.full_name ?? "").toLowerCase().startsWith(q))
       .slice(0, 6);
   }, [mention, taggable]);
+
+  const latestVersionNumber = Math.max(0, ...Object.values(versionNumbers));
+
+  const groups = useMemo(() => {
+    const result: { versionId: string; messages: Message[] }[] = [];
+    for (const m of messages) {
+      const last = result[result.length - 1];
+      if (last && last.versionId === m.version_id) {
+        last.messages.push(m);
+      } else {
+        result.push({ versionId: m.version_id, messages: [m] });
+      }
+    }
+    return result;
+  }, [messages]);
 
   const handleToLabel = useMemo(() => {
     const map = new Map<string, string>();
@@ -203,6 +223,7 @@ export default function DiscussionThread({
       org_id: orgId,
       body,
       reply_to_id: replyingTo?.id ?? null,
+      version_id: currentVersionId,
       created_at: new Date().toISOString(),
       sending: true,
     };
@@ -233,34 +254,50 @@ export default function DiscussionThread({
         {messages.length === 0 && (
           <p className="text-sm text-neutral-500">No messages yet. Start the discussion.</p>
         )}
-        {messages.map((m) => {
-          const parent = m.reply_to_id ? messages.find((p) => p.id === m.reply_to_id) : null;
+        {groups.map((group) => {
+          const versionNumber = versionNumbers[group.versionId];
+          const isCurrent = versionNumber === latestVersionNumber;
           return (
-            <div key={m.id} className={m.sending ? "opacity-60" : undefined}>
-              {parent && (
-                <div className="mb-1 truncate border-l-2 border-surface-border pl-2 text-xs text-neutral-500">
-                  {displayName(profiles[parent.author_id], parent.author_id)}: {parent.body}
-                </div>
-              )}
-              <div className="flex flex-wrap items-baseline gap-2">
-                <span className="text-sm font-medium text-foreground">
-                  {displayName(profiles[m.author_id], m.author_id)}
+            <div key={group.versionId} className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <div className="h-px flex-1 bg-surface-border" />
+                <span className="shrink-0 text-xs font-medium text-neutral-500">
+                  {versionNumber ? `Version ${versionNumber}` : "Earlier version"}
+                  {isCurrent && " · Current"}
                 </span>
-                <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-neutral-600">
-                  {orgNames[m.org_id] ?? "Unknown company"}
-                </span>
-                <span className="text-xs text-neutral-400">
-                  {new Date(m.created_at).toLocaleString()}
-                </span>
+                <div className="h-px flex-1 bg-surface-border" />
               </div>
-              <p className="text-sm text-neutral-800">{renderBody(m.body)}</p>
-              <button
-                type="button"
-                onClick={() => setReplyingTo(m)}
-                className="text-xs text-brand hover:underline"
-              >
-                Reply
-              </button>
+              {group.messages.map((m) => {
+                const parent = m.reply_to_id ? messages.find((p) => p.id === m.reply_to_id) : null;
+                return (
+                  <div key={m.id} className={m.sending ? "opacity-60" : undefined}>
+                    {parent && (
+                      <div className="mb-1 truncate border-l-2 border-surface-border pl-2 text-xs text-neutral-500">
+                        {displayName(profiles[parent.author_id], parent.author_id)}: {parent.body}
+                      </div>
+                    )}
+                    <div className="flex flex-wrap items-baseline gap-2">
+                      <span className="text-sm font-medium text-foreground">
+                        {displayName(profiles[m.author_id], m.author_id)}
+                      </span>
+                      <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-neutral-600">
+                        {orgNames[m.org_id] ?? "Unknown company"}
+                      </span>
+                      <span className="text-xs text-neutral-400">
+                        {new Date(m.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-neutral-800">{renderBody(m.body)}</p>
+                    <button
+                      type="button"
+                      onClick={() => setReplyingTo(m)}
+                      className="text-xs text-brand hover:underline"
+                    >
+                      Reply
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           );
         })}
