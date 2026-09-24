@@ -19,6 +19,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Link href="/documents/new" className="hover:text-brand">
               Upload
             </Link>
+            <Link href="/workflows" className="hover:text-brand">
+              Workflows
+            </Link>
             <Link href="/org/settings" className="hover:text-brand">
               Org settings
             </Link>

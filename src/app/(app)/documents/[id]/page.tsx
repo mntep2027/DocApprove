@@ -3,11 +3,22 @@ import { requireOrg } from "@/lib/session";
 import { getDownloadUrl, uploadDocument } from "@/lib/actions/documents";
 import { shareDocument, decideApproval } from "@/lib/actions/approvals";
 import { postMessage } from "@/lib/actions/messages";
+import { startWorkflow } from "@/lib/actions/workflows";
 import { StatusBadge } from "@/components/status-badge";
 import ShareForm from "./share-form";
 import DecisionForm from "./decision-form";
 import DiscussionThread from "./discussion-thread";
 import AddVersionForm from "./add-version-form";
+import WorkflowPanel from "./workflow-panel";
+import StartWorkflowForm from "./start-workflow-form";
+
+const WORKFLOW_ACTION_LABELS: Record<string, string> = {
+  workflow_started: "started a workflow",
+  workflow_step_approved: "approved a workflow step",
+  workflow_step_rejected: "rejected a workflow step",
+  workflow_hold: "put a workflow step on hold",
+  workflow_resume: "resumed a workflow step",
+};
 
 export default async function DocumentDetailPage({
   params,
@@ -108,8 +119,99 @@ export default async function DocumentDetailPage({
     p_document_id: id,
   });
 
+  const { data: activeInstance } = await supabase
+    .from("workflow_instances")
+    .select("id, status")
+    .eq("document_id", id)
+    .eq("status", "in_progress")
+    .maybeSingle();
+
+  let workflowSteps: {
+    id: string;
+    label: string;
+    assigned_org_id: string;
+    assigned_user_id: string | null;
+    assigned_role: string | null;
+    allow_hold: boolean;
+    status: string;
+    comment: string | null;
+    hold_reason: string | null;
+    first_viewed_at: string | null;
+    decided_by: string | null;
+    decided_at: string | null;
+  }[] = [];
+  let workflowProfiles: Record<string, { full_name: string | null; email: string }> = {};
+
+  if (activeInstance) {
+    const { data: steps } = await supabase
+      .from("workflow_step_instances")
+      .select(
+        "id, label, assigned_org_id, assigned_user_id, assigned_role, allow_hold, status, comment, hold_reason, first_viewed_at, decided_by, decided_at"
+      )
+      .eq("workflow_instance_id", activeInstance.id);
+    workflowSteps = steps ?? [];
+
+    const stepPeopleIds = [
+      ...new Set(
+        workflowSteps.flatMap((s) => [s.assigned_user_id, s.decided_by]).filter((v): v is string => Boolean(v))
+      ),
+    ];
+    if (stepPeopleIds.length > 0) {
+      const { data: stepProfiles } = await supabase
+        .from("profiles")
+        .select("id, email, full_name")
+        .in("id", stepPeopleIds);
+      workflowProfiles = Object.fromEntries(
+        (stepProfiles ?? []).map((p) => [p.id, { full_name: p.full_name, email: p.email }])
+      );
+    }
+
+    const viewableStepIds = workflowSteps
+      .filter(
+        (s) =>
+          s.status === "in_progress" &&
+          !s.first_viewed_at &&
+          s.assigned_org_id === org.id &&
+          (!s.assigned_user_id || s.assigned_user_id === user.id)
+      )
+      .map((s) => s.id);
+    for (const stepId of viewableStepIds) {
+      await supabase.rpc("mark_step_viewed", { p_step_instance_id: stepId });
+    }
+  }
+
+  let workflowTemplateOptions: {
+    id: string;
+    name: string;
+    placeholders: { id: string; label: string }[];
+  }[] = [];
+  if (isOwnerOrg && !activeInstance) {
+    const { data: templates } = await supabase
+      .from("workflow_templates")
+      .select("id, name")
+      .eq("org_id", org.id)
+      .order("updated_at", { ascending: false });
+    if (templates && templates.length > 0) {
+      const { data: allSteps } = await supabase
+        .from("workflow_template_steps")
+        .select("id, template_id, label, step_type, assignee_org_id")
+        .in(
+          "template_id",
+          templates.map((t) => t.id)
+        );
+      workflowTemplateOptions = templates.map((t) => ({
+        id: t.id,
+        name: t.name,
+        placeholders: (allSteps ?? [])
+          .filter((s) => s.template_id === t.id && s.step_type === "external" && !s.assignee_org_id)
+          .map((s) => ({ id: s.id, label: s.label })),
+      }));
+    }
+  }
+
   const shareAction = shareDocument.bind(null, id);
   const postMessageAction = postMessage.bind(null, id, org.id);
+  const startWorkflowAction = startWorkflow.bind(null, id);
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 lg:flex-row lg:items-start">
@@ -125,14 +227,29 @@ export default async function DocumentDetailPage({
         {doc.description && <p className="mt-3 text-neutral-700">{doc.description}</p>}
       </div>
 
-      {myPendingRequest && (
-        <section className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <h2 className="mb-2 font-semibold">Your decision is needed</h2>
-          <DecisionForm
-            approveAction={decideApproval.bind(null, myPendingRequest.id, id, "approved")}
-            rejectAction={decideApproval.bind(null, myPendingRequest.id, id, "rejected")}
+      {activeInstance ? (
+        <section>
+          <h2 className="mb-3 text-lg font-semibold">Approval workflow</h2>
+          <WorkflowPanel
+            documentId={id}
+            currentOrgId={org.id}
+            currentUserId={user.id}
+            instanceStatus={activeInstance.status}
+            steps={workflowSteps}
+            orgNames={orgNames}
+            profiles={workflowProfiles}
           />
         </section>
+      ) : (
+        myPendingRequest && (
+          <section className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <h2 className="mb-2 font-semibold">Your decision is needed</h2>
+            <DecisionForm
+              approveAction={decideApproval.bind(null, myPendingRequest.id, id, "approved")}
+              rejectAction={decideApproval.bind(null, myPendingRequest.id, id, "rejected")}
+            />
+          </section>
+        )
       )}
 
       <section>
@@ -169,7 +286,7 @@ export default async function DocumentDetailPage({
         )}
       </section>
 
-      {isOwnerOrg && (
+      {isOwnerOrg && !activeInstance && (
         <section>
           <h2 className="mb-3 text-lg font-semibold">Share with another company</h2>
           <ShareForm action={shareAction} />
@@ -185,6 +302,13 @@ export default async function DocumentDetailPage({
         </section>
       )}
 
+      {isOwnerOrg && !activeInstance && (
+        <section>
+          <h2 className="mb-3 text-lg font-semibold">Start a workflow</h2>
+          <StartWorkflowForm templates={workflowTemplateOptions} action={startWorkflowAction} />
+        </section>
+      )}
+
       <section>
         <h2 className="mb-3 text-lg font-semibold">Audit trail</h2>
         {auditLog && auditLog.length > 0 ? (
@@ -192,7 +316,10 @@ export default async function DocumentDetailPage({
             {auditLog.map((entry) => (
               <li key={entry.id}>
                 <span className="font-medium text-neutral-900">{actorName(entry.actor_id)}</span>{" "}
-                {entry.action === "new_version" ? "uploaded a new version" : entry.action} —{" "}
+                {entry.action === "new_version"
+                  ? "uploaded a new version"
+                  : WORKFLOW_ACTION_LABELS[entry.action] ?? entry.action}{" "}
+                —{" "}
                 {new Date(entry.created_at).toLocaleString()}
               </li>
             ))}
