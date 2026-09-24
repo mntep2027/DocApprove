@@ -27,6 +27,7 @@ export async function uploadDocument(orgId: string, formData: FormData) {
   }
 
   let documentId = existingDocumentId;
+  const isNewVersion = Boolean(documentId);
 
   if (!documentId) {
     const { data: doc, error: docError } = await supabase
@@ -76,15 +77,25 @@ export async function uploadDocument(orgId: string, formData: FormData) {
     return { error: versionError.message };
   }
 
+  if (isNewVersion) {
+    const { error: resetError } = await supabase.rpc("start_new_version", {
+      p_document_id: documentId,
+    });
+    if (resetError) {
+      return { error: resetError.message };
+    }
+  }
+
   await supabase.from("audit_log").insert({
     document_id: documentId,
     actor_id: user.id,
     org_id: orgId,
-    action: "uploaded",
+    action: isNewVersion ? "new_version" : "uploaded",
     metadata: { file_name: file.name, version_number: versionNumber },
   });
 
   revalidatePath("/dashboard");
+  revalidatePath(`/documents/${documentId}`);
   redirect(`/documents/${documentId}`);
 }
 

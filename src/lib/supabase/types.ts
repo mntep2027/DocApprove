@@ -208,6 +208,10 @@ export interface Database {
         Args: { p_document_id: string };
         Returns: { id: string; full_name: string | null; email: string; org_id: string }[];
       };
+      start_new_version: {
+        Args: { p_document_id: string };
+        Returns: undefined;
+      };
       add_org_member: {
         Args: { p_org_id: string; p_email: string; p_role: string };
         Returns: undefined;

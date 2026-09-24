@@ -1,12 +1,13 @@
 import { notFound } from "next/navigation";
 import { requireOrg } from "@/lib/session";
-import { getDownloadUrl } from "@/lib/actions/documents";
+import { getDownloadUrl, uploadDocument } from "@/lib/actions/documents";
 import { shareDocument, decideApproval } from "@/lib/actions/approvals";
 import { postMessage } from "@/lib/actions/messages";
 import { StatusBadge } from "@/components/status-badge";
 import ShareForm from "./share-form";
 import DecisionForm from "./decision-form";
 import DiscussionThread from "./discussion-thread";
+import AddVersionForm from "./add-version-form";
 
 export default async function DocumentDetailPage({
   params,
@@ -133,10 +134,19 @@ export default async function DocumentDetailPage({
       <section>
         <h2 className="mb-3 text-lg font-semibold">Versions</h2>
         <ul className="divide-y divide-surface-border rounded-lg border border-surface-border">
-          {versionsWithUrls.map((v) => (
+          {versionsWithUrls.map((v, i) => (
             <li key={v.id} className="flex items-center justify-between px-4 py-3 text-sm">
-              <span>
+              <span className="flex items-center gap-2">
                 v{v.version_number} — {v.file_name}
+                {i === 0 ? (
+                  <span className="rounded-full bg-brand-tint px-2 py-0.5 text-xs font-medium text-brand">
+                    Current
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-neutral-500">
+                    Archived
+                  </span>
+                )}
               </span>
               {v.url ? (
                 <a href={v.url} className="text-brand hover:underline">
@@ -148,6 +158,11 @@ export default async function DocumentDetailPage({
             </li>
           ))}
         </ul>
+        {isOwnerOrg && (
+          <div className="mt-3">
+            <AddVersionForm documentId={id} action={uploadDocument.bind(null, org.id)} />
+          </div>
+        )}
       </section>
 
       {isOwnerOrg && (
@@ -173,7 +188,8 @@ export default async function DocumentDetailPage({
             {auditLog.map((entry) => (
               <li key={entry.id}>
                 <span className="font-medium text-neutral-900">{actorName(entry.actor_id)}</span>{" "}
-                {entry.action} — {new Date(entry.created_at).toLocaleString()}
+                {entry.action === "new_version" ? "uploaded a new version" : entry.action} —{" "}
+                {new Date(entry.created_at).toLocaleString()}
               </li>
             ))}
           </ul>
