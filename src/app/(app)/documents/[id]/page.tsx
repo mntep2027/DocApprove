@@ -92,7 +92,7 @@ export default async function DocumentDetailPage({
 
   const versionsWithUrls = await Promise.all(
     (versions ?? []).map(async (v) => {
-      const result = await getDownloadUrl(v.storage_path);
+      const result = await getDownloadUrl(v.storage_path, v.file_name);
       return { ...v, url: "url" in result ? result.url : null };
     })
   );

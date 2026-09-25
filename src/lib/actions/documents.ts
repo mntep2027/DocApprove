@@ -54,7 +54,12 @@ export async function uploadDocument(orgId: string, formData: FormData) {
   const versionNumber = (count ?? 0) + 1;
 
   const versionId = randomUUID();
-  const storagePath = `${orgId}/${documentId}/${versionId}_${file.name}`;
+  // Supabase Storage object keys only allow a limited ASCII character set, so
+  // the original file name (which may contain non-Latin scripts, spaces, etc.)
+  // can't be used directly. The real name is kept in file_name for display
+  // and handed back on download via getDownloadUrl's `download` option.
+  const extMatch = file.name.match(/\.[a-zA-Z0-9]+$/);
+  const storagePath = `${orgId}/${documentId}/${versionId}${extMatch?.[0] ?? ""}`;
 
   const { error: uploadError } = await supabase.storage
     .from("documents")
@@ -99,14 +104,21 @@ export async function uploadDocument(orgId: string, formData: FormData) {
   redirect(`/documents/${documentId}`);
 }
 
-export async function getDownloadUrl(storagePath: string) {
+export async function getDownloadUrl(storagePath: string, fileName?: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase.storage
-    .from("documents")
-    .createSignedUrl(storagePath, 60);
+  const { data, error } = await supabase.storage.from("documents").createSignedUrl(storagePath, 60);
 
   if (error || !data) {
     return { error: error?.message ?? "Could not create download link." };
   }
-  return { url: data.signedUrl };
+  if (!fileName) {
+    return { url: data.signedUrl };
+  }
+
+  // Not using createSignedUrl's own `download` option: storage-js encodes it via
+  // URLSearchParams and then wraps the whole URL in encodeURI() again, which
+  // double-encodes non-ASCII file names (each `%` becomes `%25`). Appending the
+  // query param ourselves, after their encoding pass, avoids that.
+  const separator = data.signedUrl.includes("?") ? "&" : "?";
+  return { url: `${data.signedUrl}${separator}download=${encodeURIComponent(fileName)}` };
 }
