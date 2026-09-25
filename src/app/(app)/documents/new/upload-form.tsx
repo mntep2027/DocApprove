@@ -36,7 +36,12 @@ export default function UploadForm({
       </label>
       <label className="flex flex-col gap-1 text-sm">
         File
-        <input name="file" type="file" required className="text-sm" />
+        <input
+          name="file"
+          type="file"
+          required
+          className="text-sm text-neutral-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-surface file:px-3 file:py-2 file:text-sm file:font-medium file:text-foreground hover:file:bg-surface-border"
+        />
       </label>
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
       <button

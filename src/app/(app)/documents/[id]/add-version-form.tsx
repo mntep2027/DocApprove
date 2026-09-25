@@ -20,7 +20,12 @@ export default function AddVersionForm({
   return (
     <form action={formAction} className="flex flex-wrap items-center gap-2">
       <input type="hidden" name="documentId" value={documentId} />
-      <input name="file" type="file" required className="text-sm" />
+      <input
+        name="file"
+        type="file"
+        required
+        className="text-sm text-neutral-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-surface file:px-3 file:py-2 file:text-sm file:font-medium file:text-foreground hover:file:bg-surface-border"
+      />
       <button
         type="submit"
         disabled={pending}
