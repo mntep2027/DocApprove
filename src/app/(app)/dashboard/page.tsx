@@ -2,7 +2,8 @@ import Link from "next/link";
 import { requireOrg } from "@/lib/session";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
-import { DocumentIcon } from "@/components/icons";
+import { StatCard } from "@/components/stat-card";
+import { BellIcon, CheckIcon, ClockIcon, DocumentIcon, PauseIcon, XIcon } from "@/components/icons";
 
 export default async function DashboardPage() {
   const { supabase, org } = await requireOrg();
@@ -46,9 +47,78 @@ export default async function DashboardPage() {
     }
   }
 
+  const { data: holdSteps } = await supabase
+    .from("workflow_step_instances")
+    .select("workflow_instances!inner(document_id)")
+    .eq("status", "on_hold");
+  const onHoldCount = new Set(
+    (holdSteps ?? []).map((s) => (s.workflow_instances as unknown as { document_id: string }).document_id)
+  ).size;
+
+  const awaitingYourApprovalCount = sharedDocs.filter((d) => d.status === "pending_approval").length;
+  const sentAwaitingDecisionCount = (ownDocs ?? []).filter((d) => d.status === "pending_approval").length;
+  const approvedCount =
+    (ownDocs ?? []).filter((d) => d.status === "approved").length +
+    sharedDocs.filter((d) => d.status === "approved").length;
+  const rejectedCount =
+    (ownDocs ?? []).filter((d) => d.status === "rejected").length +
+    sharedDocs.filter((d) => d.status === "rejected").length;
+  const totalCount = (ownDocs ?? []).length;
+
   return (
     <div className="flex flex-col gap-10">
-      <section>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <StatCard
+          href="#shared-with-you"
+          icon={<BellIcon className="h-4 w-4" />}
+          value={awaitingYourApprovalCount}
+          label="Awaiting your approval"
+          variant="brand"
+          delayMs={0}
+        />
+        <StatCard
+          href="#your-documents"
+          icon={<PauseIcon className="h-4 w-4" />}
+          value={onHoldCount}
+          label="On hold"
+          variant="orange"
+          delayMs={40}
+        />
+        <StatCard
+          href="#your-documents"
+          icon={<ClockIcon className="h-4 w-4" />}
+          value={sentAwaitingDecisionCount}
+          label="Sent, awaiting decision"
+          variant="amber"
+          delayMs={80}
+        />
+        <StatCard
+          href="#your-documents"
+          icon={<CheckIcon className="h-4 w-4" />}
+          value={approvedCount}
+          label="Approved"
+          variant="green"
+          delayMs={120}
+        />
+        <StatCard
+          href="#your-documents"
+          icon={<XIcon className="h-4 w-4" />}
+          value={rejectedCount}
+          label="Rejected"
+          variant="red"
+          delayMs={160}
+        />
+        <StatCard
+          href="#your-documents"
+          icon={<DocumentIcon className="h-4 w-4" />}
+          value={totalCount}
+          label="Total documents"
+          variant="neutral"
+          delayMs={200}
+        />
+      </div>
+
+      <section id="your-documents">
         <h2 className="mb-3 text-lg font-semibold">{org.name}&apos;s documents</h2>
         {ownDocs && ownDocs.length > 0 ? (
           <ul className="divide-y divide-surface-border rounded-lg border border-surface-border">
@@ -77,7 +147,7 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      <section>
+      <section id="shared-with-you">
         <h2 className="mb-3 text-lg font-semibold">Shared with you for approval</h2>
         {sharedDocs.length > 0 ? (
           <ul className="divide-y divide-surface-border rounded-lg border border-surface-border">
