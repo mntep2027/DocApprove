@@ -202,7 +202,7 @@ export default function DiscussionThread({
     while ((match = pattern.exec(body))) {
       if (match.index > lastIndex) parts.push(body.slice(lastIndex, match.index));
       parts.push(
-        <span key={match.index} className="font-medium text-brand">
+        <span key={match.index} className="font-medium text-brand-dark">
           @{match[1]}
         </span>
       );
@@ -291,7 +291,7 @@ export default function DiscussionThread({
                     <button
                       type="button"
                       onClick={() => setReplyingTo(m)}
-                      className="text-xs text-brand hover:underline"
+                      className="text-xs text-brand-dark hover:underline"
                     >
                       Reply
                     </button>
@@ -382,7 +382,7 @@ export default function DiscussionThread({
           type="button"
           onClick={handleSend}
           disabled={sending || !draft.trim()}
-          className="self-end rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+          className="self-end rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
         >
           Send
         </button>

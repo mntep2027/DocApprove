@@ -52,7 +52,7 @@ export default async function DashboardPage() {
           <ul className="divide-y divide-surface-border rounded-lg border border-surface-border">
             {ownDocs.map((doc) => (
               <li key={doc.id} className="flex items-center justify-between px-4 py-3">
-                <Link href={`/documents/${doc.id}`} className="hover:text-brand hover:underline">
+                <Link href={`/documents/${doc.id}`} className="hover:text-brand-dark hover:underline">
                   {doc.title}
                 </Link>
                 <StatusBadge status={doc.status} />
@@ -62,7 +62,7 @@ export default async function DashboardPage() {
         ) : (
           <p className="text-sm text-neutral-500">
             No documents yet.{" "}
-            <Link href="/documents/new" className="text-brand hover:underline">
+            <Link href="/documents/new" className="text-brand-dark hover:underline">
               Upload one
             </Link>
             .
@@ -77,7 +77,7 @@ export default async function DashboardPage() {
             {sharedDocs.map((doc) => (
               <li key={doc.id} className="flex items-center justify-between px-4 py-3">
                 <div>
-                  <Link href={`/documents/${doc.id}`} className="hover:text-brand hover:underline">
+                  <Link href={`/documents/${doc.id}`} className="hover:text-brand-dark hover:underline">
                     {doc.title}
                   </Link>
                   <span className="ml-2 text-sm text-neutral-500">

@@ -63,7 +63,7 @@ function StepNodeCard({ data, selected }: NodeProps<StepNode>) {
       <Handle type="target" position={Position.Top} className="!bg-brand" />
       <span
         className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-          data.step_type === "internal" ? "bg-surface text-neutral-600" : "bg-brand-tint text-brand"
+          data.step_type === "internal" ? "bg-surface text-neutral-600" : "bg-brand-tint text-brand-dark"
         }`}
       >
         {data.step_type === "internal" ? "Internal" : "External"}
@@ -272,7 +272,7 @@ export default function WorkflowBuilder({
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+          className="rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
         >
           {saving ? "Saving..." : "Save template"}
         </button>

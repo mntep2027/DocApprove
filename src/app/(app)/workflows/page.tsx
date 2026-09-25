@@ -19,7 +19,7 @@ export default async function WorkflowsPage() {
         {canManage && (
           <Link
             href="/workflows/new"
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
+            className="rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90"
           >
             New template
           </Link>
@@ -31,7 +31,7 @@ export default async function WorkflowsPage() {
           {templates.map((t) => (
             <li key={t.id} className="flex items-center justify-between px-4 py-3">
               <div>
-                <Link href={`/workflows/${t.id}/edit`} className="text-sm font-medium hover:text-brand">
+                <Link href={`/workflows/${t.id}/edit`} className="text-sm font-medium hover:text-brand-dark">
                   {t.name}
                 </Link>
                 {t.description && <p className="text-sm text-neutral-500">{t.description}</p>}
@@ -47,7 +47,7 @@ export default async function WorkflowsPage() {
           No templates yet.{" "}
           {canManage ? (
             <>
-              <Link href="/workflows/new" className="text-brand hover:underline">
+              <Link href="/workflows/new" className="text-brand-dark hover:underline">
                 Create one
               </Link>{" "}
               to design a multi-step approval flow you can reuse.

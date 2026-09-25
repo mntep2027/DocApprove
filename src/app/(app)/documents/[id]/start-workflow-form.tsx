@@ -30,7 +30,7 @@ export default function StartWorkflowForm({
     return (
       <p className="text-sm text-neutral-500">
         No workflow templates yet — create one under{" "}
-        <a href="/workflows" className="text-brand hover:underline">
+        <a href="/workflows" className="text-brand-dark hover:underline">
           Workflows
         </a>{" "}
         first.
@@ -72,7 +72,7 @@ export default function StartWorkflowForm({
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+        className="self-start rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
       >
         {pending ? "Starting..." : "Start workflow"}
       </button>

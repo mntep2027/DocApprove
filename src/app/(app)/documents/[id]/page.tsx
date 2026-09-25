@@ -260,7 +260,7 @@ export default async function DocumentDetailPage({
               <span className="flex items-center gap-2">
                 v{v.version_number} — {v.file_name}
                 {i === 0 ? (
-                  <span className="rounded-full bg-brand-tint px-2 py-0.5 text-xs font-medium text-brand">
+                  <span className="rounded-full bg-brand-tint px-2 py-0.5 text-xs font-medium text-brand-dark">
                     Current
                   </span>
                 ) : (
@@ -270,7 +270,7 @@ export default async function DocumentDetailPage({
                 )}
               </span>
               {v.url ? (
-                <a href={v.url} className="text-brand hover:underline">
+                <a href={v.url} className="text-brand-dark hover:underline">
                   Download
                 </a>
               ) : (

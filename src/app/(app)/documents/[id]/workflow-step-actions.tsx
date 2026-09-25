@@ -72,7 +72,7 @@ export default function WorkflowStepActions({
       >
         <button
           type="submit"
-          className="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
+          className="rounded-lg bg-brand-dark px-3 py-1.5 text-sm font-medium text-white hover:brightness-90"
         >
           Resume
         </button>
