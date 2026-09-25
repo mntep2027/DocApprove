@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireOrg } from "@/lib/session";
 import { StatusBadge } from "@/components/status-badge";
-import { EmptyState, DocumentIcon } from "@/components/empty-state";
+import { EmptyState } from "@/components/empty-state";
+import { DocumentIcon } from "@/components/icons";
 
 export default async function DashboardPage() {
   const { supabase, org } = await requireOrg();

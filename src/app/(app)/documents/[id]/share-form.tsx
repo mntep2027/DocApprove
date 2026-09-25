@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { Spinner } from "@/components/spinner";
+import { ShareIcon } from "@/components/icons";
 
 const initialState: { error?: string } = {};
 
@@ -44,7 +45,7 @@ export default function ShareForm({
         disabled={pending}
         className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover disabled:opacity-50"
       >
-        {pending && <Spinner />}
+        {pending ? <Spinner /> : <ShareIcon className="h-3.5 w-3.5" />}
         {pending ? "Sharing..." : "Share"}
       </button>
       {state.error && <p className="w-full text-sm text-red-600">{state.error}</p>}

@@ -1,13 +1,15 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, type ReactNode } from "react";
 import { Spinner } from "@/components/spinner";
+import { CheckIcon, XIcon, PauseIcon, PlayIcon } from "@/components/icons";
 
 const initialState: { error?: string } = {};
 
 function ActionForm({
   action,
   label,
+  icon,
   className,
   fieldName,
   placeholder,
@@ -15,6 +17,7 @@ function ActionForm({
 }: {
   action: (formData: FormData) => Promise<{ error?: string } | void>;
   label: string;
+  icon: ReactNode;
   className: string;
   fieldName?: string;
   placeholder?: string;
@@ -42,7 +45,7 @@ function ActionForm({
         disabled={pending}
         className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50 ${className}`}
       >
-        {pending && <Spinner />}
+        {pending ? <Spinner /> : icon}
         {pending ? "Submitting..." : label}
       </button>
       {state.error && <p className="text-xs text-red-600">{state.error}</p>}
@@ -66,7 +69,7 @@ function ResumeButton({ resumeAction }: { resumeAction: () => Promise<{ error?: 
         disabled={pending}
         className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-dark px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-hover disabled:opacity-50"
       >
-        {pending && <Spinner />}
+        {pending ? <Spinner /> : <PlayIcon className="h-3.5 w-3.5" />}
         Resume
       </button>
     </form>
@@ -99,6 +102,7 @@ export default function WorkflowStepActions({
       <ActionForm
         action={approveAction}
         label="Approve"
+        icon={<CheckIcon className="h-3.5 w-3.5" />}
         className="bg-green-600 hover:bg-green-700"
         fieldName="comment"
         placeholder="Optional comment"
@@ -106,6 +110,7 @@ export default function WorkflowStepActions({
       <ActionForm
         action={rejectAction}
         label="Reject"
+        icon={<XIcon className="h-3.5 w-3.5" />}
         className="bg-red-600 hover:bg-red-700"
         fieldName="comment"
         placeholder="Optional comment"
@@ -114,6 +119,7 @@ export default function WorkflowStepActions({
         <ActionForm
           action={holdAction}
           label="Hold for clarification"
+          icon={<PauseIcon className="h-3.5 w-3.5" />}
           className="bg-neutral-500 hover:bg-neutral-600"
           fieldName="reason"
           placeholder="What do you need clarified?"

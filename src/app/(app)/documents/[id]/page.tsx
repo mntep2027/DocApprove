@@ -5,6 +5,7 @@ import { shareDocument, decideApproval } from "@/lib/actions/approvals";
 import { postMessage } from "@/lib/actions/messages";
 import { startWorkflow } from "@/lib/actions/workflows";
 import { StatusBadge } from "@/components/status-badge";
+import { DownloadIcon } from "@/components/icons";
 import ShareForm from "./share-form";
 import DecisionForm from "./decision-form";
 import DiscussionThread from "./discussion-thread";
@@ -270,7 +271,8 @@ export default async function DocumentDetailPage({
                 )}
               </span>
               {v.url ? (
-                <a href={v.url} className="text-brand-dark hover:underline">
+                <a href={v.url} className="inline-flex items-center gap-1 text-brand-dark hover:underline">
+                  <DownloadIcon className="h-3.5 w-3.5" />
                   Download
                 </a>
               ) : (
@@ -320,7 +322,7 @@ export default async function DocumentDetailPage({
                   ? "uploaded a new version"
                   : WORKFLOW_ACTION_LABELS[entry.action] ?? entry.action}{" "}
                 —{" "}
-                {new Date(entry.created_at).toLocaleString()}
+                {new Date(entry.created_at).toLocaleString("en-US")}
               </li>
             ))}
           </ul>

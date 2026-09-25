@@ -89,7 +89,7 @@ export default function WorkflowPanel({
               {(step.status === "in_progress" || step.status === "on_hold") && (
                 <p className="mt-1 text-xs text-neutral-400">
                   {step.first_viewed_at
-                    ? `Seen ${new Date(step.first_viewed_at).toLocaleString()}`
+                    ? `Seen ${new Date(step.first_viewed_at).toLocaleString("en-US")}`
                     : "Not yet viewed"}
                 </p>
               )}
@@ -103,7 +103,7 @@ export default function WorkflowPanel({
               {(step.status === "approved" || step.status === "rejected") && step.decided_by && (
                 <p className="mt-1 text-xs text-neutral-400">
                   {personName(profiles, step.decided_by) ?? "Someone"}
-                  {step.decided_at ? ` — ${new Date(step.decided_at).toLocaleString()}` : ""}
+                  {step.decided_at ? ` — ${new Date(step.decided_at).toLocaleString("en-US")}` : ""}
                   {step.comment ? `: ${step.comment}` : ""}
                 </p>
               )}

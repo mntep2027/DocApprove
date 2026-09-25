@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireOrg } from "@/lib/session";
-import { EmptyState, WorkflowIcon } from "@/components/empty-state";
+import { EmptyState } from "@/components/empty-state";
+import { WorkflowIcon } from "@/components/icons";
 
 export default async function WorkflowsPage() {
   const { supabase, org, role } = await requireOrg();
@@ -38,7 +39,7 @@ export default async function WorkflowsPage() {
                 {t.description && <p className="text-sm text-neutral-500">{t.description}</p>}
               </div>
               <span className="text-xs text-neutral-400">
-                Updated {new Date(t.updated_at).toLocaleDateString()}
+                Updated {new Date(t.updated_at).toLocaleDateString("en-US")}
               </span>
             </li>
           ))}

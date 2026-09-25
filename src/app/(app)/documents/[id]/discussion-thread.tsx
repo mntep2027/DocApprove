@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Spinner } from "@/components/spinner";
-import { EmptyState, ChatIcon } from "@/components/empty-state";
+import { EmptyState } from "@/components/empty-state";
+import { ChatIcon, ReplyIcon } from "@/components/icons";
 
 type Message = {
   id: string;
@@ -253,7 +254,7 @@ export default function DiscussionThread({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex h-[60vh] flex-col gap-3 overflow-y-auto rounded-lg border border-surface-border p-4 lg:h-[calc(100vh-12rem)]">
+      <div className="flex h-96 flex-col gap-3 overflow-y-auto rounded-lg border border-surface-border p-4 lg:h-[calc(100vh-12rem)]">
         {messages.length === 0 && (
           <EmptyState
             icon={<ChatIcon className="h-8 w-8" />}
@@ -296,15 +297,16 @@ export default function DiscussionThread({
                         {orgNames[m.org_id] ?? "Unknown company"}
                       </span>
                       <span className="text-xs text-neutral-400">
-                        {new Date(m.created_at).toLocaleString()}
+                        {new Date(m.created_at).toLocaleString("en-US")}
                       </span>
                     </div>
                     <p className="text-sm text-neutral-800">{renderBody(m.body)}</p>
                     <button
                       type="button"
                       onClick={() => setReplyingTo(m)}
-                      className="text-xs text-brand-dark hover:underline"
+                      className="inline-flex items-center gap-1 text-xs text-brand-dark hover:underline"
                     >
+                      <ReplyIcon className="h-3 w-3" />
                       Reply
                     </button>
                   </div>
