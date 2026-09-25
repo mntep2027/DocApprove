@@ -76,7 +76,7 @@ export default async function DashboardPage() {
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-dark px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-hover"
           >
             <PlusIcon className="h-3.5 w-3.5" />
-            Upload document
+            New Document
           </Link>
         </div>
         <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
