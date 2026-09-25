@@ -3,7 +3,7 @@ import { requireOrg } from "@/lib/session";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { StatCard } from "@/components/stat-card";
-import { BellIcon, CheckIcon, ClockIcon, DocumentIcon, PauseIcon, XIcon } from "@/components/icons";
+import { BellIcon, CheckIcon, ClockIcon, DocumentIcon, PauseIcon, ShareIcon, XIcon } from "@/components/icons";
 
 export default async function DashboardPage() {
   const { supabase, org } = await requireOrg();
@@ -63,7 +63,7 @@ export default async function DashboardPage() {
   const rejectedCount =
     (ownDocs ?? []).filter((d) => d.status === "rejected").length +
     sharedDocs.filter((d) => d.status === "rejected").length;
-  const totalCount = (ownDocs ?? []).length;
+  const sharedByMeCount = (ownDocs ?? []).filter((d) => d.status !== "draft").length;
 
   return (
     <div className="flex flex-col gap-10">
@@ -110,9 +110,9 @@ export default async function DashboardPage() {
         />
         <StatCard
           href="#your-documents"
-          icon={<DocumentIcon className="h-4 w-4" />}
-          value={totalCount}
-          label="Total documents"
+          icon={<ShareIcon className="h-4 w-4" />}
+          value={sharedByMeCount}
+          label="Shared by me"
           variant="neutral"
           delayMs={200}
         />
