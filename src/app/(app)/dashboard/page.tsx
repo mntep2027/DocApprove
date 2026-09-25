@@ -3,7 +3,7 @@ import { requireOrg } from "@/lib/session";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { StatCard } from "@/components/stat-card";
-import { BellIcon, CheckIcon, ClockIcon, DocumentIcon, PauseIcon, ShareIcon, XIcon } from "@/components/icons";
+import { BellIcon, CheckIcon, ClockIcon, DocumentIcon, PauseIcon, PlusIcon, ShareIcon, XIcon } from "@/components/icons";
 
 export default async function DashboardPage() {
   const { supabase, org } = await requireOrg();
@@ -69,7 +69,16 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-col gap-10">
       <section id="your-documents">
-        <h2 className="mb-3 text-lg font-semibold">{org.name}&apos;s documents</h2>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">{org.name}&apos;s documents</h2>
+          <Link
+            href="/documents/new"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-dark px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-hover"
+          >
+            <PlusIcon className="h-3.5 w-3.5" />
+            Upload document
+          </Link>
+        </div>
         <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <StatCard
             icon={<ShareIcon className="h-4 w-4" />}
