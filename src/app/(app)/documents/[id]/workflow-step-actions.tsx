@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import { Spinner } from "@/components/spinner";
 
 const initialState: { error?: string } = {};
 
@@ -39,11 +40,35 @@ function ActionForm({
       <button
         type="submit"
         disabled={pending}
-        className={`rounded-lg px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50 ${className}`}
+        className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50 ${className}`}
       >
+        {pending && <Spinner />}
         {pending ? "Submitting..." : label}
       </button>
       {state.error && <p className="text-xs text-red-600">{state.error}</p>}
+    </form>
+  );
+}
+
+function ResumeButton({ resumeAction }: { resumeAction: () => Promise<{ error?: string } | void> }) {
+  const [pending, setPending] = useState(false);
+
+  return (
+    <form
+      action={async () => {
+        setPending(true);
+        await resumeAction();
+        setPending(false);
+      }}
+    >
+      <button
+        type="submit"
+        disabled={pending}
+        className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-dark px-3 py-1.5 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
+      >
+        {pending && <Spinner />}
+        Resume
+      </button>
     </form>
   );
 }
@@ -64,20 +89,7 @@ export default function WorkflowStepActions({
   resumeAction: () => Promise<{ error?: string } | void>;
 }) {
   if (status === "on_hold") {
-    return (
-      <form
-        action={async () => {
-          await resumeAction();
-        }}
-      >
-        <button
-          type="submit"
-          className="rounded-lg bg-brand-dark px-3 py-1.5 text-sm font-medium text-white hover:brightness-90"
-        >
-          Resume
-        </button>
-      </form>
-    );
+    return <ResumeButton resumeAction={resumeAction} />;
   }
 
   if (status !== "in_progress") return null;

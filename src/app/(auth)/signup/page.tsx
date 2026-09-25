@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { signUp } from "@/lib/actions/auth";
+import { Spinner } from "@/components/spinner";
 
 const initialState: { error?: string } = {};
 
@@ -47,8 +48,9 @@ export default function SignupPage() {
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
+        className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
       >
+        {pending && <Spinner />}
         {pending ? "Creating account..." : "Sign up"}
       </button>
       <p className="text-sm text-neutral-500">

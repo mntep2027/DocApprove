@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Spinner } from "@/components/spinner";
 
 const initialState: { error?: string } = {};
 
@@ -29,8 +30,9 @@ export default function AddVersionForm({
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
+        className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
       >
+        {pending && <Spinner />}
         {pending ? "Uploading..." : "Upload new version"}
       </button>
       {state.error && <p className="w-full text-sm text-red-600">{state.error}</p>}

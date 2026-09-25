@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireOrg } from "@/lib/session";
 import { StatusBadge } from "@/components/status-badge";
+import { EmptyState, DocumentIcon } from "@/components/empty-state";
 
 export default async function DashboardPage() {
   const { supabase, org } = await requireOrg();
@@ -60,13 +61,18 @@ export default async function DashboardPage() {
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-neutral-500">
-            No documents yet.{" "}
-            <Link href="/documents/new" className="text-brand-dark hover:underline">
-              Upload one
-            </Link>
-            .
-          </p>
+          <EmptyState
+            icon={<DocumentIcon className="h-10 w-10" />}
+            title="No documents yet"
+            description={
+              <>
+                <Link href="/documents/new" className="text-brand-dark hover:underline">
+                  Upload one
+                </Link>{" "}
+                to get started.
+              </>
+            }
+          />
         )}
       </section>
 
@@ -89,7 +95,11 @@ export default async function DashboardPage() {
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-neutral-500">Nothing shared with you yet.</p>
+          <EmptyState
+            icon={<DocumentIcon className="h-10 w-10" />}
+            title="Nothing shared with you yet"
+            description="Documents another company shares with you for approval will show up here."
+          />
         )}
       </section>
     </div>

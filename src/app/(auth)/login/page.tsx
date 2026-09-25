@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { signIn } from "@/lib/actions/auth";
+import { Spinner } from "@/components/spinner";
 
 const initialState: { error?: string } = {};
 
@@ -38,8 +39,9 @@ export default function LoginPage() {
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
+        className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
       >
+        {pending && <Spinner />}
         {pending ? "Logging in..." : "Log in"}
       </button>
       <p className="text-sm text-neutral-500">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { Spinner } from "@/components/spinner";
 
 const initialState: { error?: string } = {};
 
@@ -72,8 +73,9 @@ export default function StartWorkflowForm({
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
+        className="inline-flex items-center justify-center gap-2 self-start rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
       >
+        {pending && <Spinner />}
         {pending ? "Starting..." : "Start workflow"}
       </button>
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}

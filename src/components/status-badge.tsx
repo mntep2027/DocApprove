@@ -23,7 +23,7 @@ const LABELS: Record<string, string> = {
 export function StatusBadge({ status }: { status: string }) {
   return (
     <span
-      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+      className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors duration-300 ${
         STYLES[status] ?? "bg-neutral-100 text-neutral-600"
       }`}
     >

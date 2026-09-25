@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Spinner } from "@/components/spinner";
+import { EmptyState, ChatIcon } from "@/components/empty-state";
 
 type Message = {
   id: string;
@@ -12,6 +14,7 @@ type Message = {
   version_id: string;
   created_at: string;
   sending?: boolean;
+  isNew?: boolean;
 };
 
 type Profile = { full_name: string | null; email: string };
@@ -139,7 +142,7 @@ export default function DiscussionThread({
             setMessages((prev) =>
               prev.some((m) => m.id === row.id)
                 ? prev.map((m) => (m.id === row.id ? { ...row, sending: false } : m))
-                : [...prev, row]
+                : [...prev, { ...row, isNew: true }]
             );
             if (!knownProfileIds.current.has(row.author_id)) {
               knownProfileIds.current.add(row.author_id);
@@ -252,7 +255,11 @@ export default function DiscussionThread({
     <div className="flex flex-col gap-4">
       <div className="flex h-[60vh] flex-col gap-3 overflow-y-auto rounded-lg border border-surface-border p-4 lg:h-[calc(100vh-12rem)]">
         {messages.length === 0 && (
-          <p className="text-sm text-neutral-500">No messages yet. Start the discussion.</p>
+          <EmptyState
+            icon={<ChatIcon className="h-8 w-8" />}
+            title="No messages yet"
+            description="Start the discussion."
+          />
         )}
         {groups.map((group) => {
           const versionNumber = versionNumbers[group.versionId];
@@ -270,7 +277,12 @@ export default function DiscussionThread({
               {group.messages.map((m) => {
                 const parent = m.reply_to_id ? messages.find((p) => p.id === m.reply_to_id) : null;
                 return (
-                  <div key={m.id} className={m.sending ? "opacity-60" : undefined}>
+                  <div
+                    key={m.id}
+                    className={`rounded-lg px-1.5 -mx-1.5 ${m.sending ? "opacity-60" : ""} ${
+                      m.isNew ? "animate-message-highlight" : ""
+                    }`}
+                  >
                     {parent && (
                       <div className="mb-1 truncate border-l-2 border-surface-border pl-2 text-xs text-neutral-500">
                         {displayName(profiles[parent.author_id], parent.author_id)}: {parent.body}
@@ -322,7 +334,7 @@ export default function DiscussionThread({
 
       <div className="relative flex gap-2">
         {mention && mentionMatches.length > 0 && (
-          <ul className="absolute bottom-full mb-1 w-64 overflow-hidden rounded-lg border border-surface-border bg-white shadow-lg">
+          <ul className="animate-dropdown-in absolute bottom-full mb-1 w-64 overflow-hidden rounded-lg border border-surface-border bg-white shadow-lg">
             {mentionMatches.map((p, i) => (
               <li key={p.id}>
                 <button
@@ -382,8 +394,9 @@ export default function DiscussionThread({
           type="button"
           onClick={handleSend}
           disabled={sending || !draft.trim()}
-          className="self-end rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
+          className="inline-flex shrink-0 items-center justify-center gap-2 self-end rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
         >
+          {sending && <Spinner />}
           Send
         </button>
       </div>

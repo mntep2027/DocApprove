@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireOrg } from "@/lib/session";
+import { EmptyState, WorkflowIcon } from "@/components/empty-state";
 
 export default async function WorkflowsPage() {
   const { supabase, org, role } = await requireOrg();
@@ -43,19 +44,22 @@ export default async function WorkflowsPage() {
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-neutral-500">
-          No templates yet.{" "}
-          {canManage ? (
-            <>
-              <Link href="/workflows/new" className="text-brand-dark hover:underline">
-                Create one
-              </Link>{" "}
-              to design a multi-step approval flow you can reuse.
-            </>
-          ) : (
-            "Ask an org admin to create one."
-          )}
-        </p>
+        <EmptyState
+          icon={<WorkflowIcon className="h-10 w-10" />}
+          title="No templates yet"
+          description={
+            canManage ? (
+              <>
+                <Link href="/workflows/new" className="text-brand-dark hover:underline">
+                  Create one
+                </Link>{" "}
+                to design a multi-step approval flow you can reuse.
+              </>
+            ) : (
+              "Ask an org admin to create one."
+            )
+          }
+        />
       )}
     </div>
   );

@@ -21,6 +21,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { saveWorkflowTemplate, type WorkflowStepInput, type WorkflowEdgeInput } from "@/lib/actions/workflows";
 import type { WorkflowAssigneeMode, WorkflowJoinMode, WorkflowStepType } from "@/lib/supabase/types";
+import { Spinner } from "@/components/spinner";
 
 type StepNodeData = {
   label: string;
@@ -272,8 +273,9 @@ export default function WorkflowBuilder({
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
         >
+          {saving && <Spinner />}
           {saving ? "Saving..." : "Save template"}
         </button>
       </div>
