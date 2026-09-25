@@ -1,11 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #101828;
+  /* FirstBit corporate design system (claude.ai/design project e867418f) */
+  --background: #f8f8f8;
+  --foreground: #181617;
   --brand: #e43188;
   --brand-dark: #c92873;
-  --brand-tint: #fdf2f8;
+  --brand-hover: #ec037c;
+  --brand-tint: #efcadc;
   --surface: #f2f4f7;
   --surface-border: #e4e7ec;
 }
@@ -15,10 +17,11 @@
   --color-foreground: var(--foreground);
   --color-brand: var(--brand);
   --color-brand-dark: var(--brand-dark);
+  --color-brand-hover: var(--brand-hover);
   --color-brand-tint: var(--brand-tint);
   --color-surface: var(--surface);
   --color-surface-border: var(--surface-border);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-suisse);
 }
 
 body {

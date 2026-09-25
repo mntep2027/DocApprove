@@ -20,7 +20,7 @@ export default async function WorkflowsPage() {
         {canManage && (
           <Link
             href="/workflows/new"
-            className="rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90"
+            className="rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover"
           >
             New template
           </Link>

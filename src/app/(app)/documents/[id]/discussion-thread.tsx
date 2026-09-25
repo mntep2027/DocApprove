@@ -394,7 +394,7 @@ export default function DiscussionThread({
           type="button"
           onClick={handleSend}
           disabled={sending || !draft.trim()}
-          className="inline-flex shrink-0 items-center justify-center gap-2 self-end rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
+          className="inline-flex shrink-0 items-center justify-center gap-2 self-end rounded-lg bg-brand-dark px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover disabled:opacity-50"
         >
           {sending && <Spinner />}
           Send

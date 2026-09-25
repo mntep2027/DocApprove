@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-8 bg-brand-tint px-6 py-24 text-center">
+    <main className="flex flex-1 flex-col items-center justify-center gap-8 bg-background px-6 py-24 text-center">
       <p className="text-sm font-medium tracking-wide text-brand-dark uppercase">
         Document sharing &amp; approvals for companies
       </p>
@@ -16,7 +16,7 @@ export default function Home() {
       <div className="flex gap-3">
         <Link
           href="/signup"
-          className="rounded-lg bg-brand-dark px-5 py-2.5 text-sm font-medium text-white hover:brightness-90"
+          className="rounded-lg bg-brand-dark px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-hover"
         >
           Get started
         </Link>

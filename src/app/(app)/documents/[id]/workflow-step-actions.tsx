@@ -64,7 +64,7 @@ function ResumeButton({ resumeAction }: { resumeAction: () => Promise<{ error?: 
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-dark px-3 py-1.5 text-sm font-medium text-white hover:brightness-90 disabled:opacity-50"
+        className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-dark px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-hover disabled:opacity-50"
       >
         {pending && <Spinner />}
         Resume
