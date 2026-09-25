@@ -85,3 +85,11 @@ export function PlayIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function MenuIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M3 5h18v2H3V5Z M3 11h18v2H3v-2Z M3 17h18v2H3v-2Z" />
+    </svg>
+  );
+}
