@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MenuIcon, XIcon } from "@/components/icons";
 
 const LINKS = [
@@ -19,9 +19,23 @@ export default function MobileNav({
   signOutAction: () => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function handlePointerDown(event: PointerEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [open]);
 
   return (
-    <div className="md:hidden">
+    <div className="md:hidden" ref={containerRef}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
