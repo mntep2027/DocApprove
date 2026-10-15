@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getActorName } from "@/lib/session";
+import { notifyNewApprovalNeededForOrg, notifyDocumentStatusChanged } from "@/lib/email/notify";
 
 export async function shareDocument(documentId: string, formData: FormData) {
   const orgSlug = String(formData.get("orgSlug") ?? "").trim();
@@ -19,6 +21,29 @@ export async function shareDocument(documentId: string, formData: FormData) {
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (permission === "approve") {
+    try {
+      const [{ data: doc }, { data: targetOrg }] = await Promise.all([
+        supabase.from("documents").select("org_id").eq("id", documentId).single(),
+        supabase.from("organizations").select("id").eq("slug", orgSlug).single(),
+      ]);
+      if (doc && targetOrg) {
+        const { data: fromOrg } = await supabase
+          .from("organizations")
+          .select("name")
+          .eq("id", doc.org_id)
+          .single();
+        await notifyNewApprovalNeededForOrg({
+          documentId,
+          orgId: targetOrg.id,
+          fromOrgName: fromOrg?.name ?? "A company",
+        });
+      }
+    } catch (err) {
+      console.error("[email] notifyNewApprovalNeededForOrg failed:", err);
+    }
   }
 
   revalidatePath(`/documents/${documentId}`);
@@ -42,6 +67,18 @@ export async function decideApproval(
 
   if (error) {
     return { error: error.message };
+  }
+
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const actorName = await getActorName(supabase, user.id);
+      await notifyDocumentStatusChanged({ documentId, status: decision, actorName, comment });
+    }
+  } catch (err) {
+    console.error("[email] notifyDocumentStatusChanged failed:", err);
   }
 
   revalidatePath(`/documents/${documentId}`);

@@ -39,3 +39,15 @@ export async function requireOrg() {
 
   return { supabase, user, org, role: primary.role, allOrgs: orgs ?? [] };
 }
+
+export async function getActorName(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<string> {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name, email")
+    .eq("id", userId)
+    .single();
+  return profile?.full_name || profile?.email || "Someone";
+}

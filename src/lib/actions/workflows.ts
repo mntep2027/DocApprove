@@ -2,12 +2,48 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getActorName } from "@/lib/session";
+import { notifyNewApprovalNeededForStep, notifyDocumentStatusChanged } from "@/lib/email/notify";
 import type {
   Json,
   WorkflowAssigneeMode,
   WorkflowJoinMode,
   WorkflowStepType,
 } from "@/lib/supabase/types";
+
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+
+type StepRow = {
+  id: string;
+  assigned_org_id: string;
+  assigned_user_id: string | null;
+  status: string;
+};
+
+async function getDocumentOwnerOrgName(supabase: SupabaseClient, documentId: string): Promise<string> {
+  const { data: doc } = await supabase.from("documents").select("org_id").eq("id", documentId).single();
+  if (!doc) return "A company";
+  const { data: org } = await supabase.from("organizations").select("name").eq("id", doc.org_id).single();
+  return org?.name ?? "A company";
+}
+
+async function getWorkflowStateByInstance(
+  supabase: SupabaseClient,
+  instanceId: string
+): Promise<{ status: string; steps: StepRow[] } | null> {
+  const { data: instance } = await supabase
+    .from("workflow_instances")
+    .select("status")
+    .eq("id", instanceId)
+    .single();
+  if (!instance) return null;
+
+  const { data: steps } = await supabase
+    .from("workflow_step_instances")
+    .select("id, assigned_org_id, assigned_user_id, status")
+    .eq("workflow_instance_id", instanceId);
+  return { status: instance.status, steps: steps ?? [] };
+}
 
 export type WorkflowStepInput = {
   id: string;
@@ -82,6 +118,25 @@ export async function startWorkflow(documentId: string, formData: FormData) {
     return { error: error.message };
   }
 
+  try {
+    const { data: instance } = await supabase
+      .from("workflow_instances")
+      .select("id")
+      .eq("document_id", documentId)
+      .eq("status", "in_progress")
+      .maybeSingle();
+    if (instance) {
+      const state = await getWorkflowStateByInstance(supabase, instance.id);
+      const fromOrgName = await getDocumentOwnerOrgName(supabase, documentId);
+      const activeSteps = (state?.steps ?? []).filter((s) => s.status === "in_progress");
+      for (const step of activeSteps) {
+        await notifyNewApprovalNeededForStep({ documentId, step, fromOrgName });
+      }
+    }
+  } catch (err) {
+    console.error("[email] notifyNewApprovalNeededForStep (start) failed:", err);
+  }
+
   revalidatePath(`/documents/${documentId}`);
   revalidatePath("/dashboard");
   return { error: undefined };
@@ -96,6 +151,14 @@ export async function decideWorkflowStep(
   const comment = String(formData.get("comment") ?? "").trim();
 
   const supabase = await createClient();
+
+  const { data: stepRow } = await supabase
+    .from("workflow_step_instances")
+    .select("workflow_instance_id")
+    .eq("id", stepInstanceId)
+    .single();
+  const before = stepRow ? await getWorkflowStateByInstance(supabase, stepRow.workflow_instance_id) : null;
+
   const { error } = await supabase.rpc("decide_workflow_step", {
     p_step_instance_id: stepInstanceId,
     p_decision: decision,
@@ -104,6 +167,38 @@ export async function decideWorkflowStep(
 
   if (error) {
     return { error: error.message };
+  }
+
+  try {
+    if (stepRow) {
+      const after = await getWorkflowStateByInstance(supabase, stepRow.workflow_instance_id);
+      if (after) {
+        const fromOrgName = await getDocumentOwnerOrgName(supabase, documentId);
+
+        // Steps that just became in_progress (the next hop in the DAG) need a new-approval email.
+        const wasInProgress = new Set((before?.steps ?? []).filter((s) => s.status === "in_progress").map((s) => s.id));
+        const newlyActive = after.steps.filter((s) => s.status === "in_progress" && !wasInProgress.has(s.id));
+        for (const step of newlyActive) {
+          await notifyNewApprovalNeededForStep({ documentId, step, fromOrgName });
+        }
+
+        // The whole workflow just reached a final verdict -> notify the document owner once.
+        if (before?.status === "in_progress" && after.status !== "in_progress") {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          const actorName = user ? await getActorName(supabase, user.id) : "Someone";
+          await notifyDocumentStatusChanged({
+            documentId,
+            status: after.status === "completed" ? "approved" : "rejected",
+            actorName,
+            comment,
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[email] decideWorkflowStep notifications failed:", err);
   }
 
   revalidatePath(`/documents/${documentId}`);
@@ -129,6 +224,18 @@ export async function holdWorkflowStep(
 
   if (error) {
     return { error: error.message };
+  }
+
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const actorName = await getActorName(supabase, user.id);
+      await notifyDocumentStatusChanged({ documentId, status: "on_hold", actorName, comment: reason });
+    }
+  } catch (err) {
+    console.error("[email] notifyDocumentStatusChanged (hold) failed:", err);
   }
 
   revalidatePath(`/documents/${documentId}`);
