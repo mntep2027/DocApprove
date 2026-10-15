@@ -104,9 +104,12 @@ export async function uploadDocument(orgId: string, formData: FormData) {
   redirect(`/documents/${documentId}`);
 }
 
-export async function getDownloadUrl(storagePath: string, fileName?: string) {
+export async function getDownloadUrl(
+  storagePath: string,
+  fileName?: string
+): Promise<{ url: string } | { error: string }> {
   const supabase = await createClient();
-  const { data, error } = await supabase.storage.from("documents").createSignedUrl(storagePath, 60);
+  const { data, error } = await supabase.storage.from("documents").createSignedUrl(storagePath, 300);
 
   if (error || !data) {
     return { error: error?.message ?? "Could not create download link." };

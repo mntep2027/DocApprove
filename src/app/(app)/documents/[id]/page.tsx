@@ -5,13 +5,14 @@ import { shareDocument, decideApproval } from "@/lib/actions/approvals";
 import { postMessage } from "@/lib/actions/messages";
 import { startWorkflow } from "@/lib/actions/workflows";
 import { StatusBadge } from "@/components/status-badge";
-import { DownloadIcon } from "@/components/icons";
+import { DocumentPreview } from "@/components/document-preview";
 import ShareForm from "./share-form";
 import DecisionForm from "./decision-form";
 import DiscussionThread from "./discussion-thread";
 import AddVersionForm from "./add-version-form";
 import WorkflowPanel from "./workflow-panel";
 import StartWorkflowForm from "./start-workflow-form";
+import { VersionRow } from "./version-row";
 
 const WORKFLOW_ACTION_LABELS: Record<string, string> = {
   workflow_started: "started a workflow",
@@ -46,7 +47,7 @@ export default async function DocumentDetailPage({
       supabase.from("organizations").select("id, name, slug").eq("id", doc.org_id).single(),
       supabase
         .from("document_versions")
-        .select("id, version_number, storage_path, file_name, file_size, created_at")
+        .select("id, version_number, storage_path, file_name, file_size, mime_type, created_at")
         .eq("document_id", id)
         .order("version_number", { ascending: false }),
       supabase
@@ -92,8 +93,19 @@ export default async function DocumentDetailPage({
 
   const versionsWithUrls = await Promise.all(
     (versions ?? []).map(async (v) => {
-      const result = await getDownloadUrl(v.storage_path, v.file_name);
-      return { ...v, url: "url" in result ? result.url : null };
+      // Two separate signed URLs: `url` forces a download with the real file
+      // name (via getDownloadUrl's `download` param), which would make an
+      // <iframe>/<img> preview try to download instead of rendering inline —
+      // `previewUrl` is the same object with no forced Content-Disposition.
+      const [downloadResult, previewResult] = await Promise.all([
+        getDownloadUrl(v.storage_path, v.file_name),
+        getDownloadUrl(v.storage_path),
+      ]);
+      return {
+        ...v,
+        url: "url" in downloadResult ? downloadResult.url : null,
+        previewUrl: "url" in previewResult ? previewResult.url : null,
+      };
     })
   );
 
@@ -228,6 +240,17 @@ export default async function DocumentDetailPage({
         {doc.description && <p className="mt-3 text-neutral-700">{doc.description}</p>}
       </div>
 
+      {versionsWithUrls[0]?.previewUrl && (
+        <section>
+          <h2 className="mb-3 text-lg font-semibold">Preview</h2>
+          <DocumentPreview
+            url={versionsWithUrls[0].previewUrl}
+            fileName={versionsWithUrls[0].file_name}
+            mimeType={versionsWithUrls[0].mime_type}
+          />
+        </section>
+      )}
+
       {activeInstance ? (
         <section>
           <h2 className="mb-3 text-lg font-semibold">Approval workflow</h2>
@@ -257,28 +280,15 @@ export default async function DocumentDetailPage({
         <h2 className="mb-3 text-lg font-semibold">Versions</h2>
         <ul className="divide-y divide-surface-border rounded-lg border border-surface-border">
           {versionsWithUrls.map((v, i) => (
-            <li key={v.id} className="flex items-center justify-between px-4 py-3 text-sm">
-              <span className="flex items-center gap-2">
-                v{v.version_number} — {v.file_name}
-                {i === 0 ? (
-                  <span className="rounded-full bg-brand-tint px-2 py-0.5 text-xs font-medium text-brand-dark">
-                    Current
-                  </span>
-                ) : (
-                  <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-neutral-500">
-                    Archived
-                  </span>
-                )}
-              </span>
-              {v.url ? (
-                <a href={v.url} className="inline-flex items-center gap-1 text-brand-dark hover:underline">
-                  <DownloadIcon className="h-3.5 w-3.5" />
-                  Download
-                </a>
-              ) : (
-                <span className="text-neutral-400">Unavailable</span>
-              )}
-            </li>
+            <VersionRow
+              key={v.id}
+              versionNumber={v.version_number}
+              fileName={v.file_name}
+              isCurrent={i === 0}
+              downloadUrl={v.url}
+              previewUrl={v.previewUrl}
+              mimeType={v.mime_type}
+            />
           ))}
         </ul>
         {isOwnerOrg && (
