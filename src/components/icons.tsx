@@ -125,3 +125,11 @@ export function BellIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function LockIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path fillRule="evenodd" d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5Zm3 8V7a3 3 0 0 0-6 0v3h6Zm-3 4a1.5 1.5 0 0 1 1 2.62V19h-2v-2.38A1.5 1.5 0 0 1 12 14Z" />
+    </svg>
+  );
+}
